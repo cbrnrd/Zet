@@ -1,0 +1,51 @@
+#!/usr/bin/env ruby
+
+lib = File.expand_path("../../lib", __FILE__)
+$LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
+
+require 'lib'
+
+Signal.trap("INT"){ exit! }
+
+options = {
+  :port => 8080,
+  :addr => '0.0.0.0'
+}
+
+OptionParser.new do |opts|
+  opts.on('--verbose', 'Run verbosely') do
+    $verbose = true
+  end
+
+  opts.on('-p PORT', '--port PORT', 'The TCP port to run the listener on (default 8080)', Integer) do |p|
+    options[:port] = p
+  end
+
+  opts.on('-b ADDR', '--bind ADDR', 'The local address for the listener to bind to (default 0.0.0.0)') do |addr|
+    options[:addr] = addr
+  end
+
+  opts.on('--test-distribution SIZE', 'Test the message size distribution', Integer) do |size|
+    puts "Generating 100,000 messages with payload size #{size}..."
+    Zet::Messages.test_distribution(size)
+    exit 0
+  end
+
+  opts.on('-h', '--help', 'Show this help message') do
+    puts opts
+    exit
+  end
+end.parse!(ARGV)
+
+# Start a listener thread
+listener = Zet::TcpListener.new(options[:addr], options[:port], "listener1")
+listener.start!
+Zet::ListenerPool.start_linter!(0.5) # checks for dead threads every half second and removes them
+
+while (true)
+  sleep 0.5
+  #p $listener_pool
+end
+# Initialize client pool
+
+
