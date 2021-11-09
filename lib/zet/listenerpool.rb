@@ -1,7 +1,7 @@
 module Zet
   class ListenerPool
     def self.lint_pool
-      p $listener_pool
+      #p $listener_pool
       $listener_pool.each do |t|
         unless t.status
           $listener_pool.delete(t)

@@ -37,14 +37,27 @@ OptionParser.new do |opts|
   end
 end.parse!(ARGV)
 
+# Check for first run (if keypair exists)
+unless File.exists?(File.join(DATA_DIR, 'zet_server_public.pem')) && File.exists?(File.join(DATA_DIR, 'zet_server_private.pem'))
+  puts "Could not find server RSA keypair, generating one..."
+  rsa_key = OpenSSL::PKey::RSA.new(4096)
+
+  # Write private key
+  File.write(PRIVATE_KEY_PATH, rsa_key.to_pem)
+
+  # Write public key
+  File.write(PUBLIC_KEY_PATH, rsa_key.public_key.to_pem)
+end
+
+
 # Start a listener thread
 listener = Zet::TcpListener.new(options[:addr], options[:port], "listener1")
 listener.start!
-Zet::ListenerPool.start_linter!(0.5) # checks for dead threads every half second and removes them
+Zet::ListenerPool.start_linter!(5) # checks for dead threads every 5 seconds and removes them
 
 while (true)
   sleep 0.5
-  #p $listener_pool
+  #p $client_pool
 end
 # Initialize client pool
 
