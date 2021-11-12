@@ -66,6 +66,22 @@ module Zet
       return msg[anchor_idx+10...anchor_idx+10+pld_len]
     end
 
+    # Message types from client:
+    #   - KEY EXCHANGE (1)
+    #   - DATA (2)
+    #   - BEACON (3)
+    #
+    #  On KEY EXCHANGE messages, the payload format is 
+    #     FROM CLIENT: `1//{CLIENT_PUBLIC_KEY_TEXT}`
+    #     TO CLIENT: `1//{SERVER_PUBLIC_KEY_TEXT}`
+    #
+    #  On DATA messages, the payload format is
+    #     FROM CLIENT: `2//{DATA}`
+    #
+    #  On BEACON messages, the payload format is ONE OF:
+    #     `3//CHECKIN` or `3//REQTASK`
+    #         For `CHECKIN` beacons, don't send back anything
+    #         For `REQTASK` beacons, send back a task if there is one in the client queue, otherwise send `3//NONE`
     def self.handle_valid_message(msg_type, uuid, msg, client, client_conn)
       # Check if client is in client pool (by uuid) already, add it if not
       if Zet::ClientPool.get_client_by_uuid(uuid).nil?
