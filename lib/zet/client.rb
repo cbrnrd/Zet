@@ -4,8 +4,7 @@ require 'securerandom'
 # This class defines a Client object. One client object = one computer running the zet client
 module Zet
   class Client
-    attr_reader :uuid, :ip, :version, :wait_time, :failed_checkin, :kill_date, :task_queue
-    attr_accessor :public_key
+    attr_accessor :uuid, :ip, :version, :wait_time, :failed_checkin, :kill_date, :task_queue, :public_key
 
     
     ##########
@@ -20,7 +19,7 @@ module Zet
     # task_queue - A queue of tasks to send to the client when requested. (One task per response, no chaining)
     #
     ##########
-    def initialize(uuid: nil, ip: nil, version: nil, wait_time: nil, failed_checkin: false, kill_date: nil, public_key: nil)
+    def initialize(uuid: nil, ip: nil, version: nil, wait_time: 30, failed_checkin: false, kill_date: nil, public_key: nil)
       @uuid = uuid || SecureRandom.uuid
       @ip = ip
       @version = version
@@ -37,7 +36,7 @@ module Zet
       # Will error if:
       #   - No public key exists for this client
       #   - Kill date has past
-      unless public_key.is_a?(OpenSSL::PKey::RSA) and @kill_date - Time.now > 0
+      unless public_key.is_a?(OpenSSL::PKey::RSA) || (!@kill_date.nil? && @kill_date - Time.now > 0)
         puts "ERROR: Queueing task on invalid client: #{@uuid}"
         return
       end

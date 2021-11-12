@@ -1,10 +1,9 @@
-require 'xorcist'
 module Zet
   class Messages
-    include Xorcist
     KEY_EXCHANGE = 1
     DATA = 2
     BEACON = 3
+    DATA_FRAGMENT = 4
 
     # Creates a server -> client key exchange message
     def self.create_stc_kex_message(public_key)
@@ -66,6 +65,28 @@ module Zet
 
       return msg[anchor_idx+10...anchor_idx+10+pld_len]
     end
+
+    def self.handle_valid_message(msg_type, uuid, msg, client, client_conn)
+      # Check if client is in client pool (by uuid) already, add it if not
+      if Zet::ClientPool.get_client_by_uuid(uuid).nil?
+        Zet::ClientPool.add_client(client)
+      end
+
+      case msg_type
+      when KEY_EXCHANGE
+        
+      when DATA
+        
+      when BEACON
+
+      when DATA_FRAGMENT
+
+      else
+        puts "(#{client.ip}) - Invalid message type: #{msg_type}"
+      end
+    end
+
+
 
     def self.msg_breakdown(msg)
       break_idx = 0

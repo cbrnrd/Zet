@@ -35,34 +35,31 @@ module Zet
     end
 
     def handle_connection(client_conn)
-      puts 'got connection'
 
-      # See if the client has actually sent any data that identifies itself. 
+      client_ip = client_conn.peeraddr[3]
 
       # Create a new client object and see if a client with the same IP is in the client pool
-      client = Zet::Client.new(ip: client_conn.peeraddr[3])
-      p client
-      if Zet::ClientPool.get_client_by_ip(client.ip).nil?
-        puts "Client not in client pool"
-        Zet::ClientPool.add_client(client)
+      client = Zet::Client.new(uuid: '', ip: client_ip)
+      # Size:
+      # 8 + 1 + (0-199) + 2 + 8 + (0-2048) + 8 + (0-149)
+      # Min size: 28 bytes
+      # Max size: 2423 bytes
+      raw_msg = client_conn.recv(2500) # Over read a little bit
+      begin
+        msg = Zet::Messages.unpack_message(raw_msg)
+        p "#{msg}"
+        if (msg.split('/').length < 3)
+          puts "[ERROR] - Invalid message from #{client.ip}"
+          return
+        end
+        msg_type, uuid, msg  = msg.split('/', 3)
+        client.uuid = uuid
+        Zet::Messages.handle_valid_message(msg_type, uuid, msg, client, client_conn)
+      rescue NoMethodError
+        # invalid message
+        puts "[ERROR] - Invalid message from #{client.ip}"
+        return
       end
-      
-      # Message types from client:
-      #   - KEY EXCHANGE (1)
-      #   - DATA (2)
-      #   - BEACON (3)
-      #
-      #  On KEY EXCHANGE messages, the payload format is 
-      #     FROM CLIENT: `1//{CLIENT_PUBLIC_KEY_TEXT}`
-      #     TO CLIENT: `1//{SERVER_PUBLIC_KEY_TEXT}`
-      #
-      #  On DATA messages, the payload format is
-      #     FROM CLIENT: `2//{DATA}`
-      #
-      #  On BEACON messages, the payload format is ONE OF:
-      #     `3//CHECKIN` or `3//REQTASK`
-      #         For `CHECKIN` beacons, don't send back anything
-      #         For `REQTASK` beacons, send back a task if there is one in the client queue, otherwise send `3//NONE`
     end
   end
 end
